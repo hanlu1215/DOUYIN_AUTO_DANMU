@@ -1,0 +1,14 @@
+# 构建产物
+WIN_C/build/
+rust/target/
+*.exe
+
+# 运行时生成
+config.json
+error.log
+
+# Python
+__pycache__/
+*.pyc
+danmu/陈伯夸夸.json
+CLAUDE.md

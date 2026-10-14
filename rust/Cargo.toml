@@ -1,0 +1,46 @@
+# 抖音直播自动弹幕助手（Rust 版）
+#
+# 构建：cargo build --release
+# 产物 target/release/douyin_danmu.exe，只依赖 Windows 系统 DLL，
+# 可拷贝到其他 Win10/11 机器直接运行。
+# exe 会自动向上查找含 danmu/ 的项目根目录（兼容 target/release/ 布局）。
+
+[package]
+name = "douyin_danmu"
+version = "1.0.0"
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "douyin_danmu"
+path = "src/main.rs"
+
+[dependencies]
+# 唯一的第三方依赖：微软官方的 Win32 FFI 绑定（纯函数声明，无运行时库）。
+# GUI 全部使用原生 Win32 API，不引入任何界面框架。
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",   # 窗口 / 消息 / 光标 / 剪贴板以外的一切 winuser
+    "Win32_UI_Input_KeyboardAndMouse", # keybd_event / VK_*
+    "Win32_UI_Controls",              # InitCommonControlsEx
+    "Win32_UI_Controls_Dialogs",      # GetOpenFileNameW（导入弹幕文件）
+    "Win32_UI_Shell",                 # ShellExecuteW（打开文件夹）
+    "Win32_UI_HiDpi",                 # DPI 感知
+    "Win32_System_LibraryLoader",     # GetModuleHandle / GetProcAddress
+    "Win32_System_Memory",            # GlobalAlloc（剪贴板）
+    "Win32_System_DataExchange",      # 剪贴板
+    "Win32_System_Threading",         # Sleep
+    "Win32_System_SystemInformation", # GetLocalTime（日志时间戳）
+    "Win32_System_SystemServices",    # SS_RIGHT（静态文本右对齐）
+    "Win32_Graphics_Gdi",             # 字体 / 双缓冲绘制（框选遮罩）
+] }
+
+[build-dependencies]
+# 构建期把 app.rc（图标 + 清单：Comctl32 v6 视觉样式 / PerMonitorV2 DPI 声明）嵌进 exe。
+# 找不到资源编译器时 build.rs 会跳过，程序功能不受影响（仅控件外观退回经典样式）。
+embed-resource = "2"
+
+[profile.release]
+opt-level = "s"     # 体积优先
+lto = true
+codegen-units = 1

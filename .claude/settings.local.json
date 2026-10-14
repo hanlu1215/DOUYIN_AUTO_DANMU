@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(where pyw *)",
+      "Bash(pyw -c \"import tkinter; import app; import main\")",
+      "Bash(echo \"pyw退出码: $?\")",
+      "Bash(\"C:\\\\msys64\\\\ucrt64\\\\bin\\\\pythonw.exe\" -c \"import tkinter\")",
+      "Bash(echo \"msys64-pythonw-tkinter退出码: $?\")",
+      "Bash(reg query *)",
+      "Bash(PYTHONUTF8=1 python tools/generate_chenbo_danmu.py)",
+      "Bash(PYTHONUTF8=1 python tests/test_basic.py)",
+      "Bash(PYTHONUTF8=1 python -c ' *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git check-ignore *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

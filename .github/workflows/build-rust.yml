@@ -1,0 +1,86 @@
+# Rust 版弹幕助手：手动触发构建 + 打包
+#
+# 在 GitHub 仓库页面 Actions → 「构建 Rust 版」→ Run workflow 手动启动。
+# 产物为 zip 压缩包（exe + 弹幕文件 + 说明），在运行摘要页的 Artifacts 里下载。
+
+name: 构建 Rust 版
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 编译目标三元组
+        required: true
+        default: x86_64-pc-windows-msvc
+        type: choice
+        options:
+          - x86_64-pc-windows-msvc   # 默认：静态链接 UCRT，exe 只依赖系统 DLL
+          - x86_64-pc-windows-gnu    # 备选：MinGW 工具链
+      release:
+        description: 同时创建 GitHub Release 并上传 zip
+        required: true
+        default: false
+        type: boolean
+
+# 默认 token 是只读的，创建 Release 需要 contents: write；
+# 同时保留 actions: read 以上传 Artifact
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: rust
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v5
+
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ inputs.target }}
+
+      - name: 缓存 cargo 依赖
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: 构建（release）
+        run: cargo build --release --target ${{ inputs.target }}
+
+      - name: 打包 zip
+        shell: pwsh
+        working-directory: .
+        run: |
+          $exe = "rust/target/${{ inputs.target }}/release/douyin_danmu.exe"
+          if (-not (Test-Path $exe)) { throw "未找到构建产物: $exe" }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          # exe 会从自身目录向上找 danmu/，打包时放在一起开箱即用
+          Copy-Item $exe dist/
+          Copy-Item danmu dist/ -Recurse
+          Copy-Item README.md dist/使用说明.md
+          $zip = "douyin_danmu-rust-${{ inputs.target }}.zip"
+          Compress-Archive -Path dist/* -DestinationPath $zip -Force
+          Write-Output "ZIP_NAME=$zip" >> $env:GITHUB_ENV
+
+      # upload-artifact 自己会打一层 zip，所以这里传 dist/ 文件夹而不是再传 zip，
+      # 否则下载下来是「zip 套 zip」；上面的 zip 文件只用于 Release 资产
+      - name: 上传构建产物（Artifact）
+        uses: actions/upload-artifact@v4
+        with:
+          name: douyin_danmu-rust-${{ inputs.target }}
+          path: dist/
+          retention-days: 30
+
+      - name: 创建 Release 并上传 zip
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rust-${{ github.run_number }}
+          name: Rust 版弹幕助手 (build ${{ github.run_number }})
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true

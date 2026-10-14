@@ -1,0 +1,8 @@
+// 资源脚本：应用图标 + 清单（视觉样式 / DPI 感知）
+// app.ico 由 PYTHON_SRC/tools/make_icon.py 生成（手绘风格抖音音符）
+#include <windows.h>
+
+#define IDI_APPICON 101
+IDI_APPICON ICON "app.ico"
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
